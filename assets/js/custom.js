@@ -16,12 +16,12 @@ Soziety = function(){
 	var screenWidth = $( window ).width();
 	var screenHeight = $( window ).height();
 	
-	// Preloader ============
-	var handlePreloader = function(){
-		setTimeout(function() {
-            jQuery('#preloader').fadeOut(300);
-		},300);
-	}
+	// // Preloader ============
+	// var handlePreloader = function(){
+	// 	setTimeout(function() {
+    //         jQuery('#preloader').fadeOut(1500);
+	// 	},300);
+	// }
 
 	// Menubar Toggler ============
     var handleMenubar = function() {
@@ -435,7 +435,8 @@ Soziety = function(){
 		},
 
 		load:function(){
-			handlePreloader();
+			// handlePreloader();
+			// showLoader(500);
 			handleSelectpicker();
 		},
 		
