@@ -1,7 +1,8 @@
+'use strict'
+var my_liked_post=[];
 $(document).ready(()=>{
-//    alert('script working');
+   HomeScriptFeature.getMyLikedPostIds();
    hideLoader();
-   HomeScriptFeature.getAllpostsFromServer(0,10);
    HomeScriptFeature.ClickEvents();
 });
 const HomeScriptFeature={
@@ -10,33 +11,66 @@ const HomeScriptFeature={
             var numericPart = this.id.match(/-(\d+)$/);
             if (numericPart) {
               var extractedNumber = numericPart[1];
-              var _data = {
-                is_like:true,
-                p_post_id:parseInt(extractedNumber)
+              var _like_data={
+                  p_post_id:parseInt(extractedNumber),
+                  p_user_id:4
               }
               ajaxRequest(
-               supabase_url() +"/update_post_counts",
+               supabase_url() +"/save_or_update_like",
                "POST",
-               _data,
-               (success)=>{
-                    if(success){
-                     var likeButton = $(this);
-                     var likesCount = success[0].p_likes;
-                           if (likesCount > 0) {
-                              likeButton.find('.fa-regular').removeClass('fa-regular').addClass('fa-solid');
-                           } else {
-                                 likeButton.find('.fa-regular').addClass('fill-icon').removeClass('fill-icon-2');
-                           }
-                        $(this).find('h6').html(formatNumber(likesCount));
-                    }
+               _like_data,
+               (succ)=>{
+                  if(succ ==="deleted" || succ ==="inserted" ){
+                     var _data = {
+                       is_like: succ === "inserted" ? true : false,
+                       p_post_id: parseInt(extractedNumber),
+                       is_dislike: succ === "deleted" ? true : false,
+                     };
+                     ajaxRequest(
+                        supabase_url() +"/update_post_counts",
+                        "POST",
+                        _data,
+                        (success)=>{
+                             if(success){
+                              var likeButton = $(this);
+                              var likesCount = success[0].p_likes;
+                                    if (likesCount > 0 && succ==="deleted") {
+                                       likeButton.find('.fa-solid').removeClass('fa-solid').addClass('fa-regular');
+                                    }else if(likesCount > 0 && succ==="inserted") {
+                                       likeButton.find('.fa-regular').removeClass('fa-regular').addClass('fa-solid');
+                                    }
+                                 $(this).find('h6').html(formatNumber(likesCount));
+                             }
+                        },(error)=>{
+                           console.error(error);
+                        }
+                     )         
+                  }
                },(error)=>{
                   console.error(error);
                }
               )
-              
             }
          });
       },
+      getMyLikedPostIds:()=>{
+         ajaxRequest(
+            supabase_url() +"/get_liked_post_ids",
+            "POST",
+            {"p_user_id":4},
+            (success)=>{
+               if(success){
+                  my_liked_post=success;
+                  HomeScriptFeature.getAllpostsFromServer(0, 10);
+               }
+            },(error)=>{
+               console.error(error);
+            }
+         )
+      },
+      CheckPostIsLikes: (post_id) => {
+         return my_liked_post.includes(post_id);
+      },     
       getAllpostsFromServer:(page_no,page_lenth)=>{
          let _data={
             p_user_id:null,
@@ -48,7 +82,6 @@ const HomeScriptFeature={
             "POST",
             _data,
             (success)=>{
-               console.log(success);
                HomeScriptFeature.BindPostHtml(success);
             },(error)=>{
                Aerror();
@@ -94,15 +127,19 @@ const HomeScriptFeature={
 							<div class="post-meta-btn">
 								<ul>
 									<li>
-										<a href="javascript:void(0);" class="action-btn bg-primary" id="like-post-${item.post_id}">
-											<i class="fa-regular fa-heart fill-icon"></i>
-											<i class="fa-solid fa-heart fill-icon-2"></i>
-											<h6 class="font-14 mb-0 ms-2" id="value1">${formatNumber(item.likes)}</h6>
+										<a href="javascript:void(0);" style="cursor: pointer;" class="action-btn bg-primary" data-post-index="${index}" id="like-post-${item.post_id}">
+											<span class="like-count-heart-${index}">
+                                    ${HomeScriptFeature.CheckPostIsLikes(item.post_id) ? 
+                                       `<i class="fa-solid fa-heart fill-icon"></i>` : 
+                                       `<i class="fa-regular fa-heart fill-icon"></i>`
+                                     }
+                                    </span>
+											<h6 class="font-14 mb-0 ms-2" id="like-count-elem-index-${index}-item.post_id}">${formatNumber(item.likes)}</h6>
 										</a>
 									</li>
 									<li>
 										<a href="/Community/comment.html" class="action-btn bg-secondary">
-											<i class="fa-solid fa-comment fill-icon"></i>
+											<span><i class="fa-solid fa-comment fill-icon"></i></span>
 											<h6 class="font-14 mb-0 ms-2">${formatNumber(item.comments)}</h6>
 										</a>
 									</li>
