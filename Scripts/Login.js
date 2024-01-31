@@ -13,7 +13,7 @@ $(document).on('click','#btnLogin',function(){
     _loginObj,
     (succ)=>{
         if(succ){
-            window.location.href='/Index.html'
+            window.location.href='/index.html'
         }
         else{
             $('#spnMessage').html('Invalid login credential');
